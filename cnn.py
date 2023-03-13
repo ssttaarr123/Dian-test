@@ -33,8 +33,8 @@ test_dataset = datasets.MNIST(root='./mnist_data/',
                               ])
                               )
 
-train_loader = DataLoader(train_dataset,batch_size = batch_size,shuffle=True)
-test_loader = DataLoader(test_dataset,batch_size,True)
+train_loader = DataLoader(train_dataset,batch_size = batch_size,shuffle=True,drop_last = True)
+test_loader = DataLoader(test_dataset,batch_size,True,drop_last = True)
 
 # eee = iter(train_loader)
 # a,b = next(eee)
@@ -65,7 +65,7 @@ class MyCNN_net(nn.Module):
 
     def forward(self,inputt):
         inputt = self.mymetrix(inputt)
-        inputt = inputt.view(batch_size,250)
+        inputt = inputt.view(batch_size,-1)
         out = self.mylinear(inputt)
         return out
 
@@ -73,6 +73,90 @@ mynet = MyCNN_net()
 
 criterion = torch.nn.CrossEntropyLoss()  
 optimizer = torch.optim.SGD(mynet.parameters(), lr=learning_rate, momentum=momentum)  
+
+
+def train(epoch):
+    sum_loss = 0.0
+    num_total = 0
+    for index,(data , Target) in enumerate(train_loader):
+        num_total = index + 1
+        optimizer.zero_grad()
+        digist = mynet(data)
+        loss = criterion(digist,Target)
+        loss.backward()
+        optimizer.step()
+        sum_loss += loss.item()
+    print('Times :%d' %(epoch+1))
+    print('     average training loss : %.3f' %(sum_loss/num_total))
+
+def test():
+    num_ac = 0
+    num_total = 0
+    with torch.no_grad():
+        for data, ans in test_loader:
+            out = mynet(data)
+            _, pred = torch.max(out.data,dim=1)
+            num_total += ans.size(0)
+            num_ac += (pred ==  ans).sum().item()
+    ac_rate = num_ac / num_total
+    print('     Accuracy on the test set : %.3f' %(ac_rate))
+    return  ac_rate
+
+
+if __name__ == '__main__':
+    for epoch in range(15):
+        train(epoch)
+        test()
+
+'''Times :1
+     average training loss : 1.352
+     Accuracy on the test set : 0.907
+Times :2
+     average training loss : 0.245
+     Accuracy on the test set : 0.947
+Times :3
+     average training loss : 0.164
+     Accuracy on the test set : 0.959
+Times :4
+     average training loss : 0.127
+     Accuracy on the test set : 0.966
+Times :5
+     average training loss : 0.106
+     Accuracy on the test set : 0.974
+Times :6
+     average training loss : 0.091
+     Accuracy on the test set : 0.968
+Times :7
+     average training loss : 0.081
+     Accuracy on the test set : 0.972
+Times :8
+     average training loss : 0.072
+     Accuracy on the test set : 0.977
+Times :9
+     average training loss : 0.066
+     Accuracy on the test set : 0.979
+Times :10
+     average training loss : 0.059
+     Accuracy on the test set : 0.978
+Times :11
+     average training loss : 0.054
+     Accuracy on the test set : 0.981
+Times :12
+     average training loss : 0.051
+     Accuracy on the test set : 0.982
+Times :13
+     average training loss : 0.048
+     Accuracy on the test set : 0.982
+Times :14
+     average training loss : 0.044
+     Accuracy on the test set : 0.981
+Times :15
+     average training loss : 0.041
+     Accuracy on the test set : 0.981'''
+
+
+         
+
 
 
 
