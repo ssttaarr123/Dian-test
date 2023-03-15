@@ -10,6 +10,7 @@ from nn.function import *
 import nn
 
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('tests', nargs='*')
@@ -65,7 +66,7 @@ class TestBase(object):
         if self.nn_grad is None:
             print("your backward grad is empty")
             return False
-        res = isclose(self.nn_grad, self.pt_grad.detach().numpy()).all().item()
+        res = isclose(self.nn_grad.detach().numpy(), self.pt_grad.detach().numpy()).all().item()
         if res :
             return True
         else:
@@ -114,12 +115,12 @@ class LinearTest(TestBase):
     def backward_test(self):
         s = super().backward_test()
         if s:
-            s = isclose(self.nnm.weight.grad, self.pt_wgt.grad
+            s = isclose(self.nnm.weight.grad.detach().numpy(), self.pt_wgt.grad
                      .detach().numpy()).all().item()
             if s == False:
                 print('weight_grad_dismatch')
         if s:
-            s = isclose(self.nnm.bias.grad, self.pt_bias.grad
+            s = isclose(self.nnm.bias.grad.detach().numpy(), self.pt_bias.grad
                      .detach().numpy()).all().item()
             if s == False:
                 print('bias_grad_dismatch')
@@ -157,10 +158,15 @@ class CrossEntropyTest(TestBase):
             return False
 
 if __name__ == "__main__":
-    test_list = [CrossEntropyTest(),LinearTest(),Conv2dTest()]
-    for a in test_list:
-        print("Test",a.module)
-        print("forward:",a.forward_test())
-        # print("backword:",a.backward_test())
+    # test_list = [LinearTest()]
+    # for a in test_list:
+    #     print("Test",a.module)
+    #     print("forward:",LinearTest().forward_test())
+    #     print("backword:",LinearTest().backward_test())
+    a = LinearTest()
+    print("forward:",a.forward_test())
+    print("backword:",a.backward_test())
+
     
 
+#CrossEntropyTest(),Conv2dTest()

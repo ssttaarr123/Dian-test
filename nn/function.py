@@ -80,6 +80,7 @@ class Linear(Module):
             
             
     def forward(self, input):
+        self.input = input
         mid = torch.mm(input,self.weight.t())
         if self.wheb:
             self.output = mid + self.bias
@@ -87,7 +88,9 @@ class Linear(Module):
             self.output = mid
         return self.output
     def backward(self, ones: Tensor):
-        '''TODO'''
+        self.input.grad = torch.mm(ones,self.weight)
+        self.weight.grad = torch.mm(ones.t(), self.input)
+        self.bias.grad = torch.sum(ones,dim = 0)
         return self.input.grad
 
 class CrossEntropyLoss():
