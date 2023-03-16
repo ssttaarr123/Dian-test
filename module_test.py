@@ -92,9 +92,9 @@ class Conv2dTest(TestBase):
 
     def backward_test(self):
         s = super().backward_test()
-        s &= isclose(self.nnm.weight.grad, self.pt_wgt.grad
+        s &= isclose(self.nnm.weight.grad.detach().numpy(), self.pt_wgt.grad
                      .detach().numpy()).all().item()
-        s &= isclose(self.nnm.bias.grad, self.pt_bias.grad
+        s &= isclose(self.nnm.bias.grad.detach().numpy(), self.pt_bias.grad
                      .detach().numpy()).all().item()
         return s
     
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     #     print("Test",a.module)
     #     print("forward:",LinearTest().forward_test())
     #     print("backword:",LinearTest().backward_test())
-    a = LinearTest()
+    a = CrossEntropyTest()
     print("forward:",a.forward_test())
     print("backword:",a.backward_test())
 

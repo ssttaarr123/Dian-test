@@ -36,19 +36,21 @@ class Conv2d(_ConvNd):
             False, _pair(0), groups, bias, padding_mode, **factory_kwargs)
         
     def conv2d(self, input, kernel, bias = 0, stride=1, padding=0):
-        batch_size, cha_in,w_in,h_in = input.shape
-        cha_out,cha_in,w_kernal,h_kernal = kernel.shape
-        w_out = (w_in - w_kernal + 2*padding ) // stride + 1
-        h_out = (h_in - h_kernal + 2*padding) // stride + 1
-        self.output = torch.zeros(batch_size,cha_out,w_out,h_out)
+        self.stride = stride
+        self.input = input
+        batch_size, cha_in,h_in,w_in = input.shape
+        cha_out,cha_in,h_kernal,w_kernal = kernel.shape
+        h_out = (h_in - h_kernal + 2*padding ) // stride + 1
+        w_out = (w_in - w_kernal + 2*padding) // stride + 1
+        self.output = torch.zeros(batch_size,cha_out,h_out,w_out)
         for b in range(batch_size):
             for o in range(cha_out):
 
-                for i in range(w_out):
-                    for j in range(h_out):
+                for i in range(h_out):
+                    for j in range(w_out):
                         temp = 0
                         for k in range(cha_in):
-                            temp += (input[b,k,i:i+w_kernal,j:j+h_kernal] * kernel[o,k,:,:] ).sum()
+                            temp += (input[b,k,i:i+h_kernal,j:j+w_kernal] * kernel[o,k,:,:] ).sum()
                         self.output[b,o,i,j] = temp + bias[o]
         return self.output
     
@@ -58,7 +60,20 @@ class Conv2d(_ConvNd):
         return self.conv2d(input, weight, bias)
     
     def backward(self, ones: Tensor):
-        '''TODO backward的计算方法''' 
+        batch_size,cha_out,h_out,w_out = ones.shape
+        batch_size, cha_in,h_in,w_in = self.input.shape
+        cha_out,cha_in,h_kernal,w_kernal = self.weight.shape
+        self.input.grad = torch.zeros(batch_size, cha_in,h_in,w_in)
+        self.weight.grad = torch.zeros(cha_out,cha_in,h_kernal,w_kernal)
+        self.bias.grad = torch.zeros(cha_out)
+
+        for b in range(batch_size):
+            for c in range(cha_out):
+                for h in range(h_out):
+                    for w in range(w_out):
+                        self.weight.grad[c,:,:,:] += ones[b,c,h,w] * self.input[b,:, h*self.stride:h*self.stride+h_kernal, w*self.stride:w*self.stride+w_kernal]
+                        self.input.grad[b,:, h*self.stride:h*self.stride+h_kernal , w*self.stride:w*self.stride+w_kernal] += ones[b,c,h,w] * self.weight[c,:,:,:]
+                        self.bias.grad[c] += ones[b,c,h,w]
         return self.input.grad
     
 class Linear(Module):
@@ -97,6 +112,8 @@ class CrossEntropyLoss():
     def __init__(self):
         pass
     def __call__(self, input, target):
+        self.input = input
+        self.target = target
         value_max,_ = torch.max(input, axis=1, keepdims=True)
         temp1_exp = torch.exp(input - value_max)
         softmax = temp1_exp / torch.sum(a=temp1_exp, axis=1, keepdims=True)
@@ -108,6 +125,14 @@ class CrossEntropyLoss():
         self.output = loss
         return self.output
     def backward(self):
-        '''TODO'''
+        for i in range(self.input.shape[0]):
+            for j in range(self.input.shape[1]):
+                if self.target[i] == j:
+                    self.input.grad[i,j] = -(1 - torch.exp(self.input[i,j])) / self.input.shape[0]
+                else:
+                    self.input.grad[i,j] = torch.exp(self.input[i,j]) / self.input.shape[0]
+           
         return self.input.grad
         
+
+
