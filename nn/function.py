@@ -1,6 +1,6 @@
 import imp
 from typing import Union
-from torch import Tensor
+from torch import Tensor, zeros
 from torch.nn.modules import Module
 from torch.nn.parameter import Parameter
 import torch
@@ -117,6 +117,7 @@ class CrossEntropyLoss():
         value_max,_ = torch.max(input, axis=1, keepdims=True)
         temp1_exp = torch.exp(input - value_max)
         softmax = temp1_exp / torch.sum(a=temp1_exp, axis=1, keepdims=True)
+        self.softmax = softmax
         batch_size = input.shape[0]
         loss = 0.0
         for i in range(batch_size):
@@ -125,12 +126,12 @@ class CrossEntropyLoss():
         self.output = loss
         return self.output
     def backward(self):
-        for i in range(self.input.shape[0]):
-            for j in range(self.input.shape[1]):
-                if self.target[i] == j:
-                    self.input.grad[i,j] = -(1 - torch.exp(self.input[i,j])) / self.input.shape[0]
-                else:
-                    self.input.grad[i,j] = torch.exp(self.input[i,j]) / self.input.shape[0]
+        self.input.grad = torch.zeros(self.input.shape[0],self.input.shape[1])
+        batch_size = self.input.shape[0]
+        tar = torch.zeros(batch_size,self.input.shape[1])
+        for i in range(batch_size):
+            tar[i,self.target[i]] = 1
+        self.input.grad = (self.softmax - tar) / batch_size
            
         return self.input.grad
         
