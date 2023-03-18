@@ -33,7 +33,7 @@ class Conv2d(_ConvNd):
         super(Conv2d, self).__init__(
             in_channels, out_channels, kernel_size_, stride_, padding_, dilation_,
             False, _pair(0), groups, bias, padding_mode, **factory_kwargs)
-        
+    #未优化  
     def conv2d(self, input, kernel, bias = 0, stride=1, padding=0):
         self.stride = stride
         self.input = input
@@ -57,7 +57,7 @@ class Conv2d(_ConvNd):
         weight = self.weight
         bias = self.bias
         return self.conv2d(input, weight, bias)
-    
+    #未优化
     def backward(self, ones: Tensor):
         batch_size,cha_out,h_out,w_out = ones.shape
         batch_size, cha_in,h_in,w_in = self.input.shape
