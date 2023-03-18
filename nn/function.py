@@ -1,4 +1,3 @@
-import imp
 from typing import Union
 from torch import Tensor, zeros
 from torch.nn.modules import Module
@@ -92,7 +91,7 @@ class Linear(Module):
         self.weight = Parameter(torch.empty((out_features, in_features), **factory_kwargs))#随机weight
         if bias:
             self.bias = Parameter(torch.empty(out_features, **factory_kwargs))
-        print(self.weight)
+    
             
             
     def forward(self, input):
