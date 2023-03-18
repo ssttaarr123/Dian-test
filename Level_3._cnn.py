@@ -1,4 +1,4 @@
-from nn.function import *
+from nn.function1 import *
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
@@ -6,11 +6,11 @@ import numpy as np
 import pandas as pd
 from torchvision import datasets,transforms
 from torch.utils.data import DataLoader
-torch.manual_seed(123)
+torch.manual_seed(1)
 #超参数
 batch_size = 64
 kernel_size = 3   #卷积核
-learning_rate = 1e-3
+learning_rate = 0.1
 momentum = 0.9  #动量，缓解局部最优
 torch.set_grad_enabled(False)
 
@@ -73,51 +73,51 @@ class MyCNN_net(nn.Module):
     def forward(self,inputt):
         self.inputt = inputt
         self.x1 = self.mymetrix1(inputt)
+
         self.x2 = self.mymetrix2(self.x1)
-        
-        self.x3 = self.x2.view(batch_size,-1)
-        
+ 
+        #print(self.x2.shape)
+        self.x3 = self.x2.reshape(batch_size,-1)
+        #print(self.x3.shape)
         self.x6 = self.mylinear1.forward(self.x3)
         self.x7 = self.relu1(self.x6)
- 
         out = self.mylinear3.forward(self.x7)
         return out
     def backward(self,out_grad):
  
         out_grad = self.mylinear3.backward(out_grad)
         #temp = torch.zeros_like(self.x8)
-
         out_grad = relu_back(self.x6,out_grad)
-        out_grad = self.mylinear1.backward(out_grad)
-        
-        out_grad = out_grad.view(batch_size,1,24,24)
-
+        out_grad = self.mylinear1.backward(out_grad)        
+        out_grad = out_grad.reshape(batch_size,1,24,24)
         out_grad = self.mymetrix2.backward(out_grad)
         out_grad = self.mymetrix1.backward(out_grad)
 
- 
-
-        
-        
+    def step(self,lr):      
+          self.mymetrix2.weight -= self.mymetrix2.weight.grad * lr
+          self.mymetrix1.weight -= self.mymetrix1.weight.grad * lr
+          self.mylinear1.weight -= self.mylinear1.weight.grad * lr
+          self.mylinear3.weight -= self.mylinear3.weight.grad * lr
+       
         
 mynet = MyCNN_net()
 criterion = CrossEntropyLoss()  
 optimizer = torch.optim.SGD(mynet.parameters(), lr=learning_rate, momentum=momentum)  
-
 
 def train(epoch):
     sum_loss = 0.0
     num_total = 0
     for index,(data , Target) in enumerate(train_loader):
         num_total = index + 1
-        optimizer.zero_grad()
+#        optimizer.zero_grad()
         
         digist = mynet.forward(data)
-        loss = criterion(digist,Target)
+ 
+        loss = criterion(digist,Target)   
         mynet.backward(criterion.backward())
-        optimizer.step()
+        mynet.step(learning_rate)
         sum_loss += loss.item()
-        print(index)
+        #print(index)
     print('Times :%d' %(epoch+1))
     print('     average training loss : %.3f' %(sum_loss/num_total))
 
@@ -136,7 +136,34 @@ def test():
 
 
 if __name__ == '__main__':
-    for epoch in range(15):
+    for epoch in range(6):
         train(epoch)
         test()
+
+'''Times :1
+     average training loss : 0.387
+     Accuracy on the test set : 0.932
+Times :2
+     average training loss : 0.205
+     Accuracy on the test set : 0.942
+Times :3
+     average training loss : 0.177
+     Accuracy on the test set : 0.953
+Times :4
+     average training loss : 0.160
+     Accuracy on the test set : 0.959
+Times :5
+     average training loss : 0.148
+     Accuracy on the test set : 0.949
+Times :6
+     average training loss : 0.140
+     Accuracy on the test set : 0.950'''
+
+
+         
+
+
+
+
+
 
