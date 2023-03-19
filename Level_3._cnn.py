@@ -102,7 +102,7 @@ class MyCNN_net(nn.Module):
         
 mynet = MyCNN_net()
 criterion = CrossEntropyLoss()  
-optimizer = torch.optim.SGD(mynet.parameters(), lr=learning_rate, momentum=momentum)  
+ 
 
 def train(epoch):
     sum_loss = 0.0
